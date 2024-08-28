@@ -2,7 +2,7 @@
 
 **Commerce** is a web application for online auctions that allows users to create and manage listings, place bids, track favorite items, and more.
 
-## Project Overview
+## Features
 
 Commerce enables users to:
 - **Create Listings**: Set images, prices and descriptions for items or services they want to sell.
