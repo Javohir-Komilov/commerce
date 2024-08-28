@@ -1,0 +1,130 @@
+package templates
+
+import (
+    "commerce/db"
+    "commerce/models"
+    "fmt"
+    "strconv"
+)
+
+templ ListingDetail(args models.ListingDetailArgs) {
+    @Base(args.Listing.Title) {
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1 class="mb-4">{ args.Listing.Title }</h1>
+                    <img src={ args.Listing.ImageUrl } alt="Listing image" class="img-fluid mb-4 rounded"/>
+                    if args.Listing.Description.Valid {
+                        <div class="mb-4">
+                            <h5>Description</h5>
+                            <p>{ args.Listing.Description.String }</p>
+                        </div>
+                    }
+                    <div class="mb-4">
+                        <h5>Details</h5>
+                        <ul class="list-unstyled">
+                            <li>Listed by: <a href="">{ args.Owner.Username }</a></li>
+                            <li>
+                                Category: 
+                                if args.Category.ID != 0 {
+                                    <a href={ templ.URL("/categories/" + fmt.Sprintf("%d", args.Category.ID)) }>{ args.Category.Title }</a>
+                                } else {
+                                    <span class="text-muted">No Category Listed</span>
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            if args.Listing.Active.Valid && args.Listing.Active.Bool {
+                                <h5 class="card-title">Bidding</h5>
+                                <p class="card-text">Starting Price: <strong>${ fmt.Sprintf("%.02f", args.Listing.StartingPrice) }</strong></p>
+                                if args.MaxBid.Amount != 0 {
+                                    <p class="card-text">Current Price: <strong>${ fmt.Sprintf("%.02f", args.MaxBid.Amount) }</strong></p>
+                                }
+                                <p class="card-text">{ strconv.Itoa(len(args.Bids)) } bid(s) so far.</p>
+                                if user, ok := ctx.Value("user").(db.User); ok {
+                                    if user.ID != args.Owner.ID {
+                                        if args.IsInWatchlist {
+                                            <a href={ templ.URL("/remove_watchlist/" + fmt.Sprintf("%d", args.Listing.ID)) } class="btn btn-outline-danger btn-sm mb-2">Remove from watchlist</a>
+                                        } else {
+                                            <a href={ templ.URL("/add_watchlist/" + fmt.Sprintf("%d", args.Listing.ID)) } class="btn btn-outline-primary btn-sm mb-2">Add to watchlist</a>
+                                        }
+                                        if user.ID != args.MaxBid.UserID {
+                                            <form action="/bid" method="post" class="mt-5 p-4 border rounded bg-light shadow-sm">
+                                                <input type="hidden" name="listing_id" value="{ fmt.Sprintf('%d', args.Listing.ID) }"/>
+                                                <input type="hidden" name="max_bid" value="{ fmt.Sprintf('%d', args.MaxBid.UserID) }"/>
+
+                                                <div class="mb-3">
+                                                    <label for="bid" class="form-label fw-bold">Your Bid</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="number" step="0.01" class="form-control" id="bid" name="amount" required placeholder="Enter your bid">
+                                                    </div>
+                                                    <small class="form-text text-muted">Your bid must be higher than the current price</small>
+                                                </div>
+
+                                                <button type="submit" class="btn btn-primary w-100">Place Bid</button>
+                                            </form>
+                                        } else {
+                                            <div class="alert alert-success">Your bid is the highest</div>
+                                        }
+                                    } else {
+                                        <a href={ templ.URL("/close_listing/" + fmt.Sprintf("%d", args.Listing.ID)) } class="btn btn-warning btn-sm mb-2">Close Listing</a>
+                                        <a href={ templ.URL("/edit_listing/" + fmt.Sprintf("%d", args.Listing.ID)) } class="btn btn-secondary btn-sm">Edit Listing</a>
+                                    }
+                                }
+                            } else {
+                                <div class="alert alert-info">
+                                    This listing is closed.
+                                    if user, ok := ctx.Value("user").(db.User); ok && user.ID == args.MaxBid.UserID {
+                                        <strong>You won this listing!</strong>
+                                    } else {
+                                        <span>Winner: <strong>{ args.MaxBid.OwnerName }</strong></span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-8">
+                    <h3>Comments</h3>
+                    if _, ok := ctx.Value("user").(db.User); ok {
+                        <form action="/comment" method="post" class="mb-4">
+                            <input type="hidden" name="listing_id" value={ fmt.Sprintf("%d", args.Listing.ID) }/>
+                            <div class="form-group mb-3">
+                                <label for="comment">Leave a comment</label>
+                                <textarea class="form-control" id="comment" rows="3" name="comment_text" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Comment</button>
+                        </form>
+                    }
+                    if len(args.Comments) > 0 {
+                        for _, comment := range args.Comments {
+                            @CommentItem(comment)
+                        }
+                    } else {
+                        <p class="text-muted">No comments yet</p>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
+
+templ CommentItem(comment db.Comment) {
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">
+                <a href="" class="text-decoration-none">{ comment.OwnerName }</a>
+            </h5>
+            <p class="card-text">{ comment.Comment }</p>
+            <p class="card-text"><small class="text-muted">Commented on { comment.CreatedAt.Time.Format("Jan 02, 2006 at 15:04") }</small></p>
+        </div>
+    </div>
+}

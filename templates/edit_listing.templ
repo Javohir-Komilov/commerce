@@ -1,0 +1,74 @@
+package templates
+
+import (
+    "commerce/db"
+    "fmt"
+)
+
+templ EditListing(categories []db.Category, listing db.Listing, owner db.User, category db.Category, bids []db.Bid, isInWatchlist bool) {
+    @Base("Edit Listing") {
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Edit Listing</h2>
+                        if user, ok := ctx.Value("user").(db.User); ok {
+                            if user.ID != owner.ID {
+                                if isInWatchlist {
+                                    <a href={ templ.URL("/remove_watchlist/" + fmt.Sprintf("%d", listing.ID)) } class="btn btn-outline-danger">Remove from Watchlist</a>
+                                } else {
+                                    <a href={ templ.URL("/add_watchlist/" + fmt.Sprintf("%d", listing.ID)) } class="btn btn-outline-primary">Add to Watchlist</a>
+                                }
+                            } else {
+                                if listing.Active.Valid && listing.Active.Bool {
+                                    <a href={ templ.URL("/close_listing/" + fmt.Sprintf("%d", listing.ID)) } class="btn btn-warning">Close Listing</a>
+                                } else {
+                                    <span class="badge bg-secondary">Closed</span>
+                                }
+                            }
+                        }
+                    </div>
+
+                    <form action={ templ.URL(fmt.Sprintf("/edit_listing/%d", listing.ID)) } method="post">
+                        <input type="hidden" name="listing_id" value={ fmt.Sprintf("%d", listing.ID) }/>
+                        <div class="mb-3">
+                            <label class="form-label" for="title">New Title</label>
+                            <input class="form-control" id="title" type="text" name="title" placeholder={ fmt.Sprintf("Current: %v", listing.Title) }/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="description">New Description</label>
+                            if listing.Description.Valid {
+                                <textarea class="form-control" id="description" name="description" rows="3" placeholder={ fmt.Sprintf("Current: %v", listing.Description.String) }></textarea>
+                            } else {
+								<textarea class="form-control" id="description" name="description" rows="3" placeholder={ "Enter new description" }></textarea>
+							}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="price">New Starting Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input class="form-control" id="price" type="number" step="0.01" name="price" placeholder={ fmt.Sprintf("Current: %.02f", listing.StartingPrice) }/>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="image">New Image URL</label>
+                            <input class="form-control" id="image" type="url" name="image" placeholder="https://example.com/image.jpg"/>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="category">New Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="0" selected>Choose new category</option>
+                                for _, cat := range categories {
+                                    <option value={ fmt.Sprintf("%d", cat.ID) } selected?={ cat.ID == category.ID }>{ cat.Title }</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Update Listing</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+}

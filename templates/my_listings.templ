@@ -1,0 +1,36 @@
+package templates
+
+import "commerce/db"
+
+templ MyListings(listings []db.Listing) {
+    @Base("Commerce - My Listings") {
+        <div class="container mt-4">
+            <h1 class="mb-4">
+                <i class="fas fa-list me-2 text-primary"></i>My Listings
+            </h1>
+
+            if len(listings) > 0 {
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    for _, listing := range listings {
+                        @ListingItem(listing)
+                    }
+                </div>
+            } else {
+                <div class="row justify-content-center mt-5">
+                    <div class="col-md-6 text-center">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-body py-5">
+                                <i class="fas fa-exclamation-triangle text-warning mb-4" style="font-size: 5rem;"></i>
+                                <h3 class="card-title fw-bold">No Listings Available</h3>
+                                <p class="card-text text-secondary">You haven't added any listings yet. Start adding your listings to manage them effectively!</p>
+                                <a href="/create_listing" class="btn btn-outline-primary btn-lg mt-4">
+                                    <i class="fas fa-plus me-2"></i>Create Listing
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}

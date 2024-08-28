@@ -1,0 +1,57 @@
+package templates
+
+import (
+    "commerce/db"
+    "fmt"
+)
+
+templ Categories(categories []db.Category) {
+    @Base("Categories") {
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">Categories</h2>
+            </div>
+        </div>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            for _, category := range categories {
+                @CategoryItem(category)
+            }
+        </div>
+    }
+}
+
+templ CategoryItem(category db.Category) {
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <h5 class="card-title">
+                    <a href={ templ.URL("/categories/" + fmt.Sprintf("%d", category.ID)) } class="text-decoration-none">
+                        { category.Title }
+                    </a>
+                </h5>
+            </div>
+        </div>
+    </div>
+}
+
+templ CategoryListings(category db.Category, listings []db.Listing) {
+    @Base(category.Title) {
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2>{ category.Title }</h2>
+                <a href="/categories" class="btn btn-outline-secondary btn-sm">← Back to Categories</a>
+            </div>
+        </div>
+        if len(listings) == 0 {
+            <div class="alert alert-info" role="alert">
+                No listings in this category
+            </div>
+        } else {
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                for _, listing := range listings {
+                    @ListingItem(listing)
+                }
+            </div>
+        }
+    }
+}
